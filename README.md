@@ -185,17 +185,4 @@ MIT License — free for personal and commercial use.
 
 ---
 
-# Publishing Tips
-
-Before publishing to `pub.dev`, make sure your `pubspec.yaml` includes a proper repository or homepage link:
-
-```yaml
-homepage: https://github.com/yourusername/smart_input_formatters
-repository: https://github.com/yourusername/smart_input_formatters
-```
-
-This improves your **pub points** and credibility on `pub.dev`.
-
----
-
 ⭐ If you find this package useful, consider starring the repository!
