@@ -1,7 +1,7 @@
 name: smart_input_formatters
 description: A set of high-performance Flutter TextInputFormatters for currency, math expressions, and auto-decimal shifting with cursor stability.
 version: 0.0.1
-homepage: https://github.com/yourusername/smart_input_formatters # You can add this later
+homepage: https://github.com/NiazSagor/smart_input_formatters
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
