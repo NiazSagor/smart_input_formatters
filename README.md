@@ -60,10 +60,10 @@ If you want a clean, digits-only field for simple price entry:
 
 ```dart
 TextFormField(
-inputFormatters: SmartAmountFormatter(
-decimalSep: '.',
-groupSep: ',',
-allowExpression: false, // Blocks all math operators
+  inputFormatters: SmartAmountFormatter(
+  decimalSep: '.',
+  groupSep: ',',
+  allowExpression: false, // Blocks all math operators
 ).formatters,
 );
 ```
