@@ -1,5 +1,83 @@
 import 'package:flutter/services.dart';
 
+/// A composable formatter that assembles a pipeline of [TextInputFormatter]s
+/// for currency and numeric input fields.
+///
+/// Use [formatters] to obtain the assembled list and pass it directly to
+/// [TextField.inputFormatters] or [TextFormField.inputFormatters].
+///
+/// ## Basic usage
+///
+/// ```dart
+/// TextField(
+///   inputFormatters: SmartAmountFormatter(
+///     decimalSep: '.',
+///     groupSep: ',',
+///   ).formatters,
+/// )
+/// ```
+///
+/// ## Auto-decimal mode
+///
+/// When [autoDec] is `true`, digits are shifted right as the user types so
+/// the decimal point is inserted automatically:
+///
+/// ```dart
+/// SmartAmountFormatter(
+///   decimalSep: '.',
+///   groupSep: ',',
+///   decimalDigits: 2,
+///   autoDec: true,
+/// )
+/// // Typing "599" produces "5.99"
+/// ```
+///
+/// ## Locale-aware separators
+///
+/// Pass the locale's decimal and grouping characters to support formats such
+/// as European `1.234,56`:
+///
+/// ```dart
+/// SmartAmountFormatter(
+///   decimalSep: ',',
+///   groupSep: '.',
+///   overwriteDot: true,
+///   overwriteComma: false,
+/// )
+/// ```
+/// ## Disabling expression input
+///
+/// By default, math operators (`+`, `-`, `*`, `/`, `%`) are permitted so the
+/// field can be used as a calculator input. Pass [allowExpression] as `false`
+/// for plain currency fields where only a single numeric value is expected:
+///
+/// ```dart
+/// SmartAmountFormatter(
+///   decimalSep: '.',
+///   groupSep: ',',
+///   allowExpression: false,
+/// )
+/// // Input "12+5" is rejected — only "12.50" style values are accepted.
+/// ```
+/// ## Pipeline order
+///
+/// The formatters are applied in this sequence:
+///
+/// 1. [FilteringTextInputFormatter] — rejects any character not in the
+///    allowed set (digits, separators, and optionally operators) before any
+///    other formatter sees the input.
+/// 2. [CalculatorNormalizer] — normalises raw input (`x` → `*`, remaps
+///    `.`/`,` to [decimalSep]).
+/// 3. [LeadingZeroIntegerTrimmerFormatter] — strips redundant leading zeros.
+/// 4. [AutoDecimalShiftFormatter] *(when [autoDec] is `true`)* — shifts
+///    digits to insert the decimal point automatically.
+/// 5. [GroupSeparatorFormatter] *(when [autoDec] is `false`)* — inserts
+///    thousands separators and manages cursor stability.
+///
+/// See also:
+///
+/// * [AutoDecimalShiftFormatter], for the auto-decimal shift behaviour.
+/// * [GroupSeparatorFormatter], for thousands-separator and cursor logic.
 class SmartAmountFormatter {
   final String decimalSep;
   final String groupSep;
@@ -7,7 +85,51 @@ class SmartAmountFormatter {
   final bool autoDec;
   final bool overwriteDot;
   final bool overwriteComma;
+  final bool allowExpression;
 
+  /// Creates a [SmartAmountFormatter] with the given separator configuration.
+  ///
+  /// The [decimalSep] and [groupSep] are required and must not be equal to
+  /// each other, as the underlying formatters use them to distinguish integer
+  /// and fractional parts.
+  ///
+  /// ### Parameters
+  ///
+  /// - [decimalSep] — the character used to separate the integer part from the
+  ///   fractional part (e.g. `'.'` for `1234.56`, `','` for `1234,56`).
+  ///
+  /// - [groupSep] — the character used to group digits in the integer part
+  ///   (e.g. `','` for `1,234,567`, `'.'` for `1.234.567`).
+  ///
+  /// - [decimalDigits] — the number of fractional digits. Defaults to `2`.
+  ///   Only meaningful when [autoDec] is `true`; ignored by
+  ///   [GroupSeparatorFormatter].
+  ///
+  /// - [autoDec] — when `true`, digits are automatically shifted so the
+  ///   decimal separator is inserted at the position determined by
+  ///   [decimalDigits] (cash-register style). When `false` (the default),
+  ///   the user places the decimal separator manually and thousands separators
+  ///   are inserted visually by [GroupSeparatorFormatter].
+  ///
+  /// - [overwriteDot] — when `true` (the default), a typed `'.'` is silently
+  ///   replaced with [decimalSep]. Set to `false` if the host keyboard already
+  ///   emits the correct separator.
+  ///
+  /// - [overwriteComma] — when `true` (the default), a typed `','` is silently
+  ///   replaced with [decimalSep]. Set to `false` to treat `','` as a literal
+  ///   character (e.g. when [decimalSep] is `','` and [groupSep] is `'.'`).
+  ///
+  /// - [allowExpression] — when `true` (the default), the operator characters
+  ///   `+`, `-`, `*`, `/`, and `%` are included in the allowed input set,
+  ///   enabling calculator-style expressions such as `12.50+3.00`. Set to
+  ///   `false` for plain currency fields where only a single numeric value is
+  ///   expected; any operator character will be rejected before reaching the
+  ///   downstream formatters.
+  ///
+  /// ### Throws
+  ///
+  /// Does not throw directly, but passing identical values for [decimalSep]
+  /// and [groupSep] will produce undefined formatting behaviour at runtime.
   SmartAmountFormatter({
     required this.decimalSep,
     required this.groupSep,
@@ -15,18 +137,26 @@ class SmartAmountFormatter {
     this.autoDec = false,
     this.overwriteDot = true,
     this.overwriteComma = true,
+    this.allowExpression = true,
   });
 
   List<TextInputFormatter> get formatters {
+    final escapedDecimal = RegExp.escape(decimalSep);
+    final escapedGroup = RegExp.escape(groupSep);
+
+    final operators = allowExpression ? r'\+\-\*/%' : '';
+
+    final allowedRegex = RegExp(
+      '[^0-9$operators$escapedDecimal$escapedGroup]',
+    );
     return [
+      FilteringTextInputFormatter.deny(allowedRegex),
       CalculatorNormalizer(
         overwriteDot: overwriteDot,
         overwriteComma: overwriteComma,
         decimalSep: decimalSep,
         groupSep: groupSep,
       ),
-      // Note: Filtering is often best placed here to ensure
-      // the following formatters only deal with valid chars.
       LeadingZeroIntegerTrimmerFormatter(
         decimalSep: decimalSep,
         groupSep: groupSep,
