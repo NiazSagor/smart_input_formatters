@@ -45,7 +45,20 @@ import 'package:flutter/services.dart';
 ///   overwriteComma: false,
 /// )
 /// ```
+/// ## Disabling expression input
 ///
+/// By default, math operators (`+`, `-`, `*`, `/`, `%`) are permitted so the
+/// field can be used as a calculator input. Pass [allowExpression] as `false`
+/// for plain currency fields where only a single numeric value is expected:
+///
+/// ```dart
+/// SmartAmountFormatter(
+///   decimalSep: '.',
+///   groupSep: ',',
+///   allowExpression: false,
+/// )
+/// // Input "12+5" is rejected — only "12.50" style values are accepted.
+/// ```
 /// ## Pipeline order
 ///
 /// The formatters are applied in this sequence:
@@ -68,6 +81,7 @@ class SmartAmountFormatter {
   final bool autoDec;
   final bool overwriteDot;
   final bool overwriteComma;
+  final bool allowExpression;
 
   /// Creates a [SmartAmountFormatter] with the given separator configuration.
   ///
@@ -101,6 +115,13 @@ class SmartAmountFormatter {
   ///   replaced with [decimalSep]. Set to `false` to treat `','` as a literal
   ///   character (e.g. when [decimalSep] is `','` and [groupSep] is `'.'`).
   ///
+  /// - [allowExpression] — when `true` (the default), the operator characters
+  ///   `+`, `-`, `*`, `/`, and `%` are included in the allowed input set,
+  ///   enabling calculator-style expressions such as `12.50+3.00`. Set to
+  ///   `false` for plain currency fields where only a single numeric value is
+  ///   expected; any operator character will be rejected before reaching the
+  ///   downstream formatters.
+  ///
   /// ### Throws
   ///
   /// Does not throw directly, but passing identical values for [decimalSep]
@@ -112,18 +133,26 @@ class SmartAmountFormatter {
     this.autoDec = false,
     this.overwriteDot = true,
     this.overwriteComma = true,
+    this.allowExpression = true,
   });
 
   List<TextInputFormatter> get formatters {
+    final escapedDecimal = RegExp.escape(decimalSep);
+    final escapedGroup = RegExp.escape(groupSep);
+
+    final operators = allowExpression ? r'\+\-\*/%' : '';
+
+    final allowedRegex = RegExp(
+      '[^0-9$operators$escapedDecimal$escapedGroup]',
+    );
     return [
+      FilteringTextInputFormatter.deny(allowedRegex),
       CalculatorNormalizer(
         overwriteDot: overwriteDot,
         overwriteComma: overwriteComma,
         decimalSep: decimalSep,
         groupSep: groupSep,
       ),
-      // Note: Filtering is often best placed here to ensure
-      // the following formatters only deal with valid chars.
       LeadingZeroIntegerTrimmerFormatter(
         decimalSep: decimalSep,
         groupSep: groupSep,
