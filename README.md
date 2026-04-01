@@ -130,6 +130,11 @@ Example behavior:
 
 `SmartAmountFormatter` runs a sequence of specialized formatters in a controlled pipeline to ensure clean and predictable input.
 
+### 0. Filtering Selection
+The first line of defense. It immediately blocks any character that isn't a digit, a separator, or a math operator (if allowExpression is true).
+
+Benefit: Prevents letters, emojis, and invalid symbols from ever entering the field.
+
 ### 1. CalculatorNormalizer
 Standardizes operators and separators.
 
