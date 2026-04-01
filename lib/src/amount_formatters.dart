@@ -63,11 +63,15 @@ import 'package:flutter/services.dart';
 ///
 /// The formatters are applied in this sequence:
 ///
-/// 1. [CalculatorNormalizer] — normalises raw input (`x` → `*`, remaps `.`/`,`).
-/// 2. [LeadingZeroIntegerTrimmerFormatter] — strips redundant leading zeros.
-/// 3. [AutoDecimalShiftFormatter] *(when [autoDec] is `true`)* — shifts digits
-///    to insert the decimal point automatically.
-/// 4. [GroupSeparatorFormatter] *(when [autoDec] is `false`)* — inserts
+/// 1. [FilteringTextInputFormatter] — rejects any character not in the
+///    allowed set (digits, separators, and optionally operators) before any
+///    other formatter sees the input.
+/// 2. [CalculatorNormalizer] — normalises raw input (`x` → `*`, remaps
+///    `.`/`,` to [decimalSep]).
+/// 3. [LeadingZeroIntegerTrimmerFormatter] — strips redundant leading zeros.
+/// 4. [AutoDecimalShiftFormatter] *(when [autoDec] is `true`)* — shifts
+///    digits to insert the decimal point automatically.
+/// 5. [GroupSeparatorFormatter] *(when [autoDec] is `false`)* — inserts
 ///    thousands separators and manages cursor stability.
 ///
 /// See also:
