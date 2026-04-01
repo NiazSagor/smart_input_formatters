@@ -54,6 +54,20 @@ The easiest way to use this package is through the **`SmartAmountFormatter` wrap
 
 ---
 
+### Simple Amount (No Math)
+
+If you want a clean, digits-only field for simple price entry:
+
+```dart
+TextFormField(
+inputFormatters: SmartAmountFormatter(
+decimalSep: '.',
+groupSep: ',',
+allowExpression: false, // Blocks all math operators
+).formatters,
+);
+```
+
 ## Classic Calculator Mode
 
 Use this for standard price inputs where you want thousands separators and math expression support.
