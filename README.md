@@ -135,6 +135,8 @@ The first line of defense. It immediately blocks any character that isn't a digi
 
 Benefit: Prevents letters, emojis, and invalid symbols from ever entering the field.
 
+---
+
 ### 1. CalculatorNormalizer
 Standardizes operators and separators.
 
